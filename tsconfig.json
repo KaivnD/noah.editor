@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "es5",
+    "allowJs": true,
+    "noEmit": true,
+    "strict": true,
+    "declaration": true,
+    "outDir": "./build",
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "noUnusedParameters": true,
+    "noUnusedLocals": true,
+    "downlevelIteration": true
+  },
+  "include": ["src"]
+}
