@@ -1,5 +1,3 @@
 const { DocumentEditor } = neon;
-
-const app = document.getElementById("app");
-
-new DocumentEditor(app);
+const editor = new DocumentEditor("app");
+editor.use("little");

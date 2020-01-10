@@ -1,6 +1,7 @@
 import typescript from "rollup-plugin-typescript2";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
+import builtins from "rollup-plugin-node-builtins";
 import { terser } from "rollup-plugin-terser";
 import path from "path";
 
@@ -26,7 +27,8 @@ export default outputConfigs.map(config => {
     },
     plugins: [
       commonjs(),
-      resolve(),
+      resolve({ preferBuiltins: true }),
+      builtins(),
       typescript({
         check: true,
         tsconfig: path.resolve(__dirname, "tsconfig.json"),
