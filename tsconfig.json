@@ -10,7 +10,8 @@
     "esModuleInterop": true,
     "noUnusedParameters": true,
     "noUnusedLocals": true,
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "typeRoots": ["./src/types"]
   },
   "include": ["src"]
 }
