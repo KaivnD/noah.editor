@@ -1,68 +1,51 @@
-import Snap from "snapsvg";
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events'
+import SVG from 'svg.js'
 
 interface GridSettings {
-  large?: GridProp;
-  small?: GridProp;
+  large?: GridProp
+  small?: GridProp
 }
 
 interface GridProp {
-  color: string;
-  width: number;
+  color: string
+  width: number
 }
 
 export class Grid extends EventEmitter {
-  paper: Snap.Paper;
-  update(): void {
-    this.el.innerHTML = "";
-    this.paper
-      .rect(0, 0, this.el.clientWidth, this.el.clientHeight)
-      .attr({ fill: "url(#grid)" });
-  }
-  public el: SVGElement;
-  public settings?: GridSettings;
+  public el: HTMLElement
+  public settings?: GridSettings
 
   constructor() {
-    super();
+    super()
 
-    this.on("update", () => this.update());
+    this.el = document.createElement('div')
+    this.el.style.width = '100%'
+    this.el.style.height = '100%'
 
-    this.el = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    this.el.style.width = "100%";
-    this.el.style.height = "100%";
+    const paper = SVG(this.el).size('100%', '100%')
 
-    this.paper = Snap(this.el);
+    const small = paper.pattern(10, 10, (add) => {
+      add
+        .path('M 10 0 L 0 0 0 10')
+        .fill('none')
+        .stroke({ width: 0.1, color: 'grey' })
+    })
 
-    const small = this.paper.pattern(0, 0, 10, 10).add(
-      this.paper.path("M 10 0 L 0 0 0 10").attr({
-        fill: "none",
-        stroke: this.settings?.small?.color || "grey",
-        strokeWidth: this.settings?.small?.width || 0.1
-      })
-    );
+    const large = paper.pattern(100, 100, (add) => {
+      add.rect(100, 100).fill(small)
+      add
+        .path('M 100 0 L 0 0 0 100')
+        .fill('none')
+        .stroke({ width: 0.5, color: 'grey' })
+    })
 
-    this.paper
-      .pattern(0, 0, 100, 100)
-      .attr({
-        id: "grid"
-      })
-      .add(
-        this.paper.rect(0, 0, 100, 100).attr({
-          fill: small
-        })
-      )
-      .add(
-        this.paper.path("M 100 0 L 0 0 0 100").attr({
-          fill: "none",
-          stroke: this.settings?.large?.color || "grey",
-          strokeWidth: this.settings?.large?.width || 0.5
-        })
-      );
+    this.on('transform', () => {
+      large.transform()
+    })
 
-    this.el.onload = () => {
-      this.paper
-        .rect(0, 0, this.el.clientWidth, this.el.clientHeight)
-        .attr({ fill: "url(#grid)" });
-    };
+    paper
+      .rect(paper.width(), paper.height())
+      .fill(large)
+      .stroke({ width: 1, color: 'black' })
   }
 }
