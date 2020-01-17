@@ -1,10 +1,12 @@
 import { EventEmitter } from 'events'
 import { Grid } from './Grid'
 import Vector, { Point2D, Transform } from '../core/Vector'
+import { SearchBar } from './SearchBar'
 
 export enum EditorInteraction {
   None,
-  Pan
+  Pan,
+  Search
 }
 
 export class EditorBase extends EventEmitter {
@@ -19,6 +21,7 @@ export class EditorBase extends EventEmitter {
   private startPointer: Point2D = { x: 0, y: 0 }
 
   grid: Grid
+  searchBar: SearchBar
 
   constructor(public container: HTMLElement) {
     super()
@@ -33,7 +36,9 @@ export class EditorBase extends EventEmitter {
     // this.el.style.zIndex = '-1'
 
     this.grid = new Grid()
+    this.searchBar = new SearchBar()
     this.el.appendChild(this.grid.el)
+    container.appendChild(this.searchBar.el)
 
     container.addEventListener('mousedown', (e: MouseEvent) =>
       this.onMouseDn(e)
@@ -46,6 +51,13 @@ export class EditorBase extends EventEmitter {
       e.preventDefault()
     })
     container.addEventListener('wheel', (e: WheelEvent) => this.onZoom(e))
+
+    container.addEventListener('dblclick', (e: MouseEvent) => this.onDBClidk(e))
+  }
+
+  onDBClidk(e: MouseEvent): any {
+    this.interaction = EditorInteraction.Search
+    this.searchBar.show({ x: e.offsetX, y: e.offsetY }, this.transform)
   }
 
   onZoom(e: WheelEvent) {
@@ -79,14 +91,16 @@ export class EditorBase extends EventEmitter {
 
   onMouseUp(e: MouseEvent): any {
     this.updatePointer(e)
+    if (this.interaction == EditorInteraction.Search) this.searchBar.close()
     this.interaction = EditorInteraction.None
     this.update()
   }
 
   onMouseMove(e: MouseEvent): any {
+    if (this.interaction !== EditorInteraction.Pan) return
     e.preventDefault()
-    if (this.interaction === EditorInteraction.None) return
     this.updatePointer(e)
+    // FIXME zoom时，Pan画布的步调与光标不一致
     let zoom = this.transform.z
     let delta = Vector.sub(this.pointer, this.startPointer)
     zoom = Math.sqrt(zoom)
@@ -116,6 +130,8 @@ export class EditorBase extends EventEmitter {
     if (this.interaction === EditorInteraction.Pan)
       this.el.style.cursor = 'pointer'
     else this.el.style.cursor = ''
+
+    this.grid.emit('transform', this.transform)
 
     this.el.style.transform = `translate(${x}px, ${y}px) scale(${z})`
   }
