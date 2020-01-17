@@ -36,6 +36,8 @@
     "typescript": "^3.7.4"
   },
   "dependencies": {
+    "jss": "^10.0.3",
+    "jss-preset-default": "^10.0.3",
     "svg.js": "^2.7.1"
   }
 }
