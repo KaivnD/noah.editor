@@ -2,11 +2,14 @@ import { EventEmitter } from 'events'
 import { Grid } from './Grid'
 import Vector, { Point2D, Transform } from '../core/Vector'
 import { SearchBar } from './SearchBar'
+import { Selector } from './Selector'
 
 export enum EditorInteraction {
   None,
   Pan,
-  Search
+  Search,
+  Select,
+  Contextmenu
 }
 
 export class EditorBase extends EventEmitter {
@@ -22,6 +25,7 @@ export class EditorBase extends EventEmitter {
 
   grid: Grid
   searchBar: SearchBar
+  selector: Selector
 
   constructor(public container: HTMLElement) {
     super()
@@ -37,7 +41,9 @@ export class EditorBase extends EventEmitter {
 
     this.grid = new Grid()
     this.searchBar = new SearchBar()
+    this.selector = new Selector()
     this.el.appendChild(this.grid.el)
+    container.appendChild(this.selector.el)
     container.appendChild(this.searchBar.el)
 
     container.addEventListener('mousedown', (e: MouseEvent) =>
@@ -81,42 +87,80 @@ export class EditorBase extends EventEmitter {
   }
 
   onMouseDn(e: MouseEvent): any {
+    if (this.interaction === EditorInteraction.Search) return
     e.preventDefault()
-    if (e.button !== 2) return
-    this.updatePointer(e)
-    this.interaction = EditorInteraction.Pan
-    this.startPointer = this.pointer
-    this.startTransform = { ...this.transform }
+    setTimeout(() => {
+      this.updatePointer(e)
+      switch (e.button) {
+        case 0: {
+          this.interaction = EditorInteraction.Select
+          this.selector.show()
+          break
+        }
+        case 2: {
+          this.interaction = EditorInteraction.Pan
+          break
+        }
+        default:
+          break
+      }
+
+      this.startPointer = this.pointer
+      this.startTransform = { ...this.transform }
+    }, 300)
   }
 
   onMouseUp(e: MouseEvent): any {
     this.updatePointer(e)
     if (this.interaction == EditorInteraction.Search) this.searchBar.close()
+    switch (this.interaction) {
+      case EditorInteraction.Search: {
+        this.searchBar.close()
+        break
+      }
+      case EditorInteraction.Select: {
+        this.selector.hide()
+        break
+      }
+      default:
+        break
+    }
     this.interaction = EditorInteraction.None
     this.update()
   }
 
   onMouseMove(e: MouseEvent): any {
-    if (this.interaction !== EditorInteraction.Pan) return
+    if (this.interaction === EditorInteraction.Search) return
     e.preventDefault()
     this.updatePointer(e)
-    // FIXME zoom时，Pan画布的步调与光标不一致
-    let zoom = this.transform.z
-    let delta = Vector.sub(this.pointer, this.startPointer)
-    zoom = Math.sqrt(zoom)
-    delta = Vector.mult(delta, zoom)
-    const pos = Vector.add(
-      {
-        x: this.startTransform?.x || 0,
-        y: this.startTransform?.y || 0
-      },
-      delta
-    )
+    console.log(this.interaction)
+    switch (this.interaction) {
+      case EditorInteraction.Pan: {
+        // FIXME zoom时，Pan画布的步调与光标不一致
+        let zoom = this.transform.z
+        let delta = Vector.sub(this.pointer, this.startPointer)
+        zoom = Math.sqrt(zoom)
+        delta = Vector.mult(delta, zoom)
+        const pos = Vector.add(
+          {
+            x: this.startTransform?.x || 0,
+            y: this.startTransform?.y || 0
+          },
+          delta
+        )
 
-    this.transform.x = pos.x
-    this.transform.y = pos.y
+        this.transform.x = pos.x
+        this.transform.y = pos.y
 
-    this.update()
+        this.update()
+        break
+      }
+      case EditorInteraction.Select: {
+        break
+      }
+      default:
+        break
+    }
 
     // this.grid.emit('transform', {
     //   x: delta.x,
